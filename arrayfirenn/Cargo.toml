@@ -1,0 +1,13 @@
+[package]
+name = "arrayfirenn"
+version = "0.1.0"
+authors = ["Robotik-PC <hannes.eilers@fh-kiel.de>"]
+edition = "2018"
+
+[dependencies]
+num  ="*"
+arrayfire = "3.6"
+serde = "*"
+serde_derive = "*"
+bincode = "*"
+time = "*"
