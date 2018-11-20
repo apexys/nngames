@@ -14,6 +14,8 @@ pub mod nn_trainer;*/
 
 mod nn2; 
 
+use self::nn2::ANN;
+
 
 #[allow(unused_must_use)]
 fn main() {
@@ -25,25 +27,31 @@ fn main() {
     print!("Name: {}\nPlatform: {}\nToolkit: {}\nCompute: {}\n", name, platform, toolkit, compute);
     println!("Revision: {}", get_revision());
 
-    let dims = Dim4::new(&[128*128, 1, 1, 1]);
+    println!("Creating test network");
+    let mut ann = ANN::new(vec![2,3,1], 0.5);
 
+    println!("Creating test data");
+    let testdata_input = vec![
+        0.0,0.0,
+        0.0,1.0,
+        1.0,0.0,
+        1.0,1.0
+    ];
 
-    let mut nodes = Vec::new();
-    let mut values = Vec::new();
-    for _ in 0..128*128{
-        let a = randu::<f32>(dims);
-        nodes.push(a);
-        let b = randu::<f32>(dims);
-        values.push(b);
-    }
+    let testdata_output = vec![
+        0.0,
+        1.0,
+        1.0,
+        0.0
+    ];
 
-    println!("Test values created");
+    let testdata_array_input = Array::new(&testdata_input, Dim4::new(&[2,4,1,1]));
+    let testdata_array_output = Array::new(&testdata_output, Dim4::new(&[1,4,1,1]));
+       
+    println!("Training network");
 
-    let result = nodes.iter().zip(values).map(|(node, value)| sum(&(node * value), 0)).collect::<Vec<_>>();
-    let res_refs = result.iter().map(|a| a).collect::<Vec<_>>();
-    let result_vec =  sigmoid(&join_many(0, res_refs));
+    ann.train(&testdata_array_input, &testdata_array_output, 2.0, 20000, 2, 0.01, true);
 
-    println!("Result calculated");
-    print(&result_vec);
+    println!("Training done");
 
 }
