@@ -1,0 +1,11 @@
+[package]
+name = "nnglyphrec"
+version = "0.1.0"
+authors = ["Robotik-PC <hannes.eilers@fh-kiel.de>"]
+edition = "2018"
+
+[dependencies]
+image = "*"
+imageproc = "*"
+rand = "0.6"
+rayon = "*"

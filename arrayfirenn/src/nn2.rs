@@ -35,11 +35,14 @@ impl ANN{
 
     fn forward_propagate(&self, input: &Array<f32>) -> Vec<Array<f32>>{
         let mut signal = Vec::with_capacity(self.num_layers as usize);
-        signal[0] = input.copy(); //MAYBE THIS COPY DOESN'T WORK
+        signal.push(input.copy()); //MAYBE THIS COPY DOESN'T WORK
         for i in 0..self.num_layers - 1{
+            println!("Layer: {}", i + 1);
             let input = ANN::add_bias(&signal[i as usize]);
+            println!("Bias added");
             let output = matmul(&input, &self.weights[i as usize], MatProp::NONE, MatProp::NONE);
-            signal[(i + 1) as usize] = sigmoid(&output);
+            println!("Weights multiplied");
+            signal.push(sigmoid(&output));
         }
         signal
     }
@@ -83,6 +86,41 @@ impl ANN{
         let signal = self.forward_propagate(input);
         let output = &signal[(self.num_layers  -1) as usize];
         return output.copy();
+    }
+
+    pub fn train_vec(&mut self, training_data: Vec<(Array<f32>, Array<f32>)>, alpha: f32, max_epochs: u64, max_err: f64, verbose: bool) -> f64{
+        if verbose{
+            println!("Starting training on {} pairs of input and expected output", training_data.len());
+        }
+
+        for i in 0 .. max_epochs{
+            for (input, expected) in &training_data{
+                //Propagate the inputs forward
+                println!("Forward propagating input");
+                print(&input);
+                let signals = self.forward_propagate(&input);
+                println!("Signal length: {}", signals.len());
+                let output = &signals[signals.len() - 1];
+                self.back_propagate(signals, &expected, alpha);
+            }
+            let mut total_error = 0f64;
+            for (input, expected) in &training_data{
+                let out = self.predict(&input);
+                let error = ANN::error(&out, &expected);
+                total_error += error;
+            }
+             if total_error < max_err {
+                println!("Converged on Epoch {}", i + 1);
+                return total_error;
+            }
+
+            if verbose {
+                //if ((i+1) % 10) == 0{
+                    println!("Epoch: {}, Error: {}", i + 1, total_error);
+                //}
+            }
+        }
+        0f64
     }
 
     pub fn train(&mut self, input: &Array<f32>, target: &Array<f32>, alpha: f32, max_epochs: u64, batch_size: u64, max_err: f64, verbose: bool) -> f64{
