@@ -19,7 +19,7 @@ use self::nn3::ANN;
 
 #[allow(unused_must_use)]
 fn main() {
-    set_backend(Backend::OPENCL);
+    set_backend(Backend::CPU);
     println!("{} compute devices found", device_count());
     set_device(0);
     info();
@@ -30,7 +30,7 @@ fn main() {
     println!("Revision: {}", get_revision());
 
     println!("Creating test network");
-    let mut ann = ANN::new(vec![2,3,2]);
+    let mut ann = ANN::new(vec![2,3,1]);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
@@ -40,9 +40,11 @@ fn main() {
     let pred = ann.predict(&test_input);
     print(&pred);
 
-    ann.back_propagate(ann.forward_propagate(&test_input), &ar(vec![1.0, 0.0]), 0.01);
 
-    /*
+
+    //ann.back_propagate(ann.forward_propagate(&test_input), &ar(vec![1.0, 0.0]), 0.01);
+
+    
     println!("Creating test data");
     let testdata_input = vec![
         (ar(vec![0.0, 0.0]), ar(vec![0.0])),
@@ -53,10 +55,10 @@ fn main() {
        
     println!("Training network");
 
-    ann.train_vec(testdata_input, 2.0, 20000, 0.01, true);
+    ann.evo_train(&testdata_input, 10, 1000, 0.01, 10000);
 
     println!("Training done");
-    */
+    
 /*
     let input: Array<f32> = randu(Dim4::new(&[2,1,1,1]));
     let weights: Array<f32> = randu(Dim4::new(&[1,2,1,1]));

@@ -1,11 +1,12 @@
 use af::*;
+use std::cmp::Ordering;
 
-
+#[derive(Clone)]
 pub struct ANN{
-    layers: Vec<Array<f32>>,
-    num_inputs: usize,
-    num_outputs: usize,
-    num_layers: usize
+    pub layers: Vec<Array<f32>>,
+    pub num_inputs: usize,
+    pub num_outputs: usize,
+    pub num_layers: usize
 }
 
 impl ANN{
@@ -63,7 +64,7 @@ impl ANN{
         out * (constant(1, out.dims()) - out)
     }
 
-    pub fn back_propagate(&mut self, signal: Vec<Array<f32>>, target: &Array<f32>, alpha: f32){
+    /*pub fn back_propagate(&mut self, signal: Vec<Array<f32>>, target: &Array<f32>, alpha: f32){
         //Get error for output layer
         let mut out = &signal[(self.num_layers - 1) as usize];
         let mut error = out - target;
@@ -73,30 +74,20 @@ impl ANN{
         println!("Num layers: {}", self.num_layers);
 
         for i in (0 .. self.num_layers -1).rev(){
-            println!("i: {}", i);
             let input = ANN::add_bias(&signal[i as usize]);
             let delta = ANN::derivative(out) * &error; //How much is each output wrong by?
-            println!("Delta: ");
-            print(&delta);
-            println!("Weights: ");
             let weights = &self.layers[i as usize];
-            print(&weights);
             let wd = weights.dims();
             let wdims = wd.get();
-            println!("Indims: {:?}", &input.dims());
-            println!("Deltadims: {:?}", delta.dims());
-            println!("Delta (expanded):");
             let delta_expanded = tile(&delta, Dim4::new(&[1, wdims[1],1,1]));
-            print(&delta_expanded);
-            println!("Delta_expanded_dims: {:?}", delta_expanded.dims());
             let input_expanded = tile(&transpose(&input,false), Dim4::new(&[wdims[0], 1, 1, 1]));
-            print(&input_expanded);
             let grad = -(input_expanded*delta_expanded * alpha) / m;
             self.layers[i as usize] += grad;
+            println!("Updated weights in layer {}", i);
             //let grad = -(input * &tile(&delta, Dim4::new(&[1, wdims[1],1,1])) * alpha ) / m;
             //println!("Grad: ");
             //print(&grad);
-            break;
+            
             //Adjust weights
             /*let grad = -(matmul(&delta, &input, MatProp::NONE, MatProp::NONE) * alpha) / m;
             self.layers[i as usize] += transpose(&grad, false);
@@ -108,5 +99,50 @@ impl ANN{
             //remove the error of bias and propagate backwards
             error = cols(&error, 1, error.dims().get()[0]);*/
         }
+    }*/
+
+    fn gen_offspring(network: &ANN, offspring: usize, mutation_speed: f32) -> Vec<ANN>{
+        (0 .. offspring).map(|_| {
+            ANN{
+                layers: network.layers.iter().map(|l:&Array<f32>| {
+                    let random_change: Array<f32> = randu(Dim4::new(&[l.dims().get()[0],l.dims().get()[1],1,1]));
+                    l + (random_change * mutation_speed)
+                }).collect::<Vec<Array<f32>>>(),
+                ..*network
+            }
+        }).collect::<Vec<ANN>>()
+    }
+
+    fn test_on(network: &ANN,  testdata: &Vec<(Array<f32>, Array<f32>)>) -> f32{
+        testdata.iter().map(|(test, expected)| {
+            let result = network.predict(test);
+            let error = sum_all(&abs(&(result - expected))).0 as f32;
+            return error;
+        }).fold(0f32, |prev, next| prev + next)
+    }
+
+    pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64) -> ANN{
+        let mut zoo = ANN::gen_offspring(self, population, mutation_speed);
+
+        let fcomp = |f1, f2| {
+            if f1 < f2{
+                return Ordering::Less;
+            }else if f2 > f1{
+                return Ordering::Greater;
+            }else{
+                return Ordering::Equal;
+            }
+        };
+
+        for gen in 0 .. generations{
+            println!("Starting test on generation {}", gen);
+            let offspring = zoo.iter().map(|specimen| ANN::gen_offspring(specimen, offspring / population, mutation_speed)).flatten().collect::<Vec<ANN>>();
+            let mut test_result = zoo.into_iter().chain(offspring).map(|spec| (ANN::test_on(&spec, testdata), spec)).collect::<Vec<(f32, ANN)>>();
+            test_result.sort_unstable_by(|sp1, sp2| fcomp(sp1.0, sp2.0));
+            println!("Best error rate of generation {}: {}", gen, test_result[0].0);
+            zoo = test_result.into_iter().take(population).map(|(score, spec)| spec).collect::<Vec<ANN>>();
+        }
+
+        return zoo[0].clone();
     }
 }
