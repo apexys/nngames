@@ -12,9 +12,9 @@ use af::*;
 /*pub mod nn;
 pub mod nn_trainer;*/
 
-mod nn2; 
-//mod nn3;
-use self::nn2::ANN;
+//mod nn2; 
+mod nn3;
+use self::nn3::ANN;
 
 
 #[allow(unused_must_use)]
@@ -30,9 +30,18 @@ fn main() {
     println!("Revision: {}", get_revision());
 
     println!("Creating test network");
-    let mut ann = ANN::new(vec![2,3,1], 0.5);
+    let mut ann = ANN::new(vec![2,3,2]);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
+
+    let test_input = ar(vec![0.0,1.0]);
+
+    println!("Prediction: ");
+    let pred = ann.predict(&test_input);
+    print(&pred);
+
+    ann.back_propagate(ann.forward_propagate(&test_input), &ar(vec![1.0, 0.0]), 0.01);
+
     /*
     println!("Creating test data");
     let testdata_input = vec![
@@ -57,10 +66,10 @@ fn main() {
     print(&weights);
     print(&output);
 */
+/*
 
-
-    let input: Array<f32> = randu(Dim4::new(&[128*128,1,1,1]));
-    let weights: Array<f32> = randu(Dim4::new(&[32*32,128*128,1,1]));
+    let input: Array<f32> = randu(Dim4::new(&[2,1,1,1]));
+    let weights: Array<f32> = randu(Dim4::new(&[3,2,1,1]));
 
     println!("Weights generated");
 
@@ -77,14 +86,14 @@ fn main() {
             MatProp::NONE), 0)
     };
 
-    /*println!("Input:");
+    println!("Input:");
     print(&input);
     println!("Weights:");
     print(&weights);
-    println!("Output");*/
-    //print(&vec_mat_mul(&input, &weights));
-    println!("Sum of all outputs: {}", sum_all(&vec_mat_mul(&input, &weights)).0 );
-
+    println!("Output");
+    print(&vec_mat_mul(&input, &weights));
+    //println!("Sum of all outputs: {}", sum_all(&vec_mat_mul(&input, &weights)).0 );
+*/
 /*
     let ar: Array<f32> = randu(Dim4::new(&[4,3,1,1]));
     println!("Initial array: ");
