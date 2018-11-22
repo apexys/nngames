@@ -59,8 +59,10 @@ fn main() {
 */
 
 
-    let input: Array<f32> = randu(Dim4::new(&[4,1,1,1]));
-    let weights: Array<f32> = randu(Dim4::new(&[3,4,1,1]));
+    let input: Array<f32> = randu(Dim4::new(&[128*128,1,1,1]));
+    let weights: Array<f32> = randu(Dim4::new(&[32*32,128*128,1,1]));
+
+    println!("Weights generated");
 
     let vec_mat_mul = |vec: &Array<f32>, mat: &Array<f32>| {
         let vd = vec.dims();
@@ -75,12 +77,13 @@ fn main() {
             MatProp::NONE), 0)
     };
 
-    println!("Input:");
+    /*println!("Input:");
     print(&input);
     println!("Weights:");
     print(&weights);
-    println!("Output");
-    print(&vec_mat_mul(&input, &weights));
+    println!("Output");*/
+    //print(&vec_mat_mul(&input, &weights));
+    println!("Sum of all outputs: {}", sum_all(&vec_mat_mul(&input, &weights)).0 );
 
 /*
     let ar: Array<f32> = randu(Dim4::new(&[4,3,1,1]));
