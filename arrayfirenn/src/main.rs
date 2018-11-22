@@ -19,7 +19,7 @@ use self::nn2::ANN;
 
 #[allow(unused_must_use)]
 fn main() {
-    set_backend(Backend::CPU);
+    set_backend(Backend::OPENCL);
     println!("{} compute devices found", device_count());
     set_device(0);
     info();
@@ -48,10 +48,69 @@ fn main() {
 
     println!("Training done");
     */
+/*
+    let input: Array<f32> = randu(Dim4::new(&[2,1,1,1]));
+    let weights: Array<f32> = randu(Dim4::new(&[1,2,1,1]));
+    let output = matmul(&weights, &input, MatProp::NONE, MatProp::NONE);
 
+    print(&input);
+    print(&weights);
+    print(&output);
+*/
+
+
+    let input: Array<f32> = randu(Dim4::new(&[4,1,1,1]));
+    let weights: Array<f32> = randu(Dim4::new(&[3,4,1,1]));
+
+    let vec_mat_mul = |vec: &Array<f32>, mat: &Array<f32>| {
+        let vd = vec.dims();
+        let md = mat.dims();
+        let vecdims = vd.get();
+        let matdims = md.get();
+        let temp_vec = join(1, &vec ,&constant(0f32, Dim4::new(&[vecdims[0], matdims[0] - vecdims[1],1,1])));
+        col(&matmul(
+            &mat,
+            &temp_vec,
+            MatProp::NONE,
+            MatProp::NONE), 0)
+    };
+
+    println!("Input:");
+    print(&input);
+    println!("Weights:");
+    print(&weights);
+    println!("Output");
+    print(&vec_mat_mul(&input, &weights));
+
+/*
     let ar: Array<f32> = randu(Dim4::new(&[4,3,1,1]));
-    let mat: Array<f32> = randu(Dim4::new(&[3,4,1,1]));
-    let res = matmul(&ar, &mat, MatProp::NONE, MatProp::NONE);
-    print(&res);
+    println!("Initial array: ");
+    let vec: Array<f32> = randu(Dim4::new(&[4,1,1,1]));
+
+    println!("Constant to add: ");
+    let d = vec.dims();
+    let dim = d.get();
+    let d2 = Dim4::new(&[dim[0], ar.dims().get()[1] - dim[1], dim[2], dim[3]]);
+    println!("Dimensions to create: {:?}", d.get());
+    let con = constant(0f32, d2);
+    print(&con);
+
+    println!("Joined: ");
+    let joined = join(1, &vec, &con);
+    print(&joined);
+
+    println!("Transposed: ");
+    let transp = transpose(&vec, false);
+    print(&transp);
+*/
+    /*
+
+    let resize_to = |ar: &Array<f32>, dims: Dim4| moddims(&join(0, &ar, &constant(0f32, Dim4::new(&[dims.get()[1] - ar.dims().get()[1],1,1,1]))), dims);
+
+    let modvec = resize_to(&vec, Dim4::new(&[4,3,1,1]));
+    print(&modvec);
+    //let mat: Array<f32> = randu(Dim4::new(&[3,4,1,1]));
+    //let res = matmul(&modvec, &mat, MatProp::UPPER, MatProp::NONE);
+    //print(&res);*/
 
 }
