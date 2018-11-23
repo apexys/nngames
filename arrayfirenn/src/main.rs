@@ -9,17 +9,18 @@ extern crate arrayfire as af;
 extern crate num;
 use af::*;
 
-/*pub mod nn;
-pub mod nn_trainer;*/
 
-//mod nn2; 
 mod nn3;
 use self::nn3::ANN;
+
+mod inputdata;
+mod demodata;
+use self::demodata::{create_testdata_multiple, load_glyphlib};
 
 
 #[allow(unused_must_use)]
 fn main() {
-    set_backend(Backend::CPU);
+    set_backend(Backend::OPENCL);
     println!("{} compute devices found", device_count());
     set_device(0);
     info();
@@ -32,7 +33,7 @@ fn main() {
     let mut ann: ANN =  match std::path::Path::new("testnn.ann").exists(){
         false => {
             println!("Creating test network");
-            ANN::new(vec![2,3, 3,1])
+            ANN::new(vec![128*128,32*32, 16*16, 8*8,5])
         },
         true => {
             println!("Loading test network");
@@ -40,31 +41,27 @@ fn main() {
         }
     };
 
+    println!("Loading glyphlib");
+    let glyphlib = load_glyphlib();
+
+    println!("Generating testdata");
+    let testdata = create_testdata_multiple(&glyphlib, 100);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
-    //let test_input = ar(vec![0.0,1.0]);
+    let testdata_array = testdata.into_iter().map(|td| (ar(td.unpacked_pixels), ar(vec![td.glyph_id, td.gx, td.gy, td.rotation, td.glyph_present]))).collect::<Vec<(Array<f32>, Array<f32>)>>();
 
-    //println!("Prediction: ");
-    //let pred = ann.predict(&test_input);
-    //print(&pred);
-
-
-
-    //ann.back_propagate(ann.forward_propagate(&test_input), &ar(vec![1.0, 0.0]), 0.01);
-
-    
-    println!("Creating test data");
-    let testdata_input = vec![
-        (ar(vec![0.0, 0.0]), ar(vec![0.0])),
-        (ar(vec![0.0, 1.0]), ar(vec![1.0])),
-        (ar(vec![1.0, 0.0]), ar(vec![1.0])),
-        (ar(vec![1.0, 1.0]), ar(vec![0.0]))
-    ];
-       
     println!("Training network");
 
-    ann.evo_train(&testdata_input, 10, 150, 0.1, 20);
+    let cb = |gen, net: ANN|{
+        if gen % 5 == 0{
+            std::thread::spawn(move || {
+                net.save(&format!{"gen.{}.ann", gen});
+            });
+        }
+    };
+
+    ann.evo_train(&testdata_array, 2, 10, 0.01, 10000, Box::new(cb));
 
     println!("Training done");
 

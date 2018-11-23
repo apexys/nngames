@@ -52,7 +52,7 @@ impl ANN{
     }
 
 
-    pub fn save(&self, file: &'static str){
+    pub fn save<'a>(&self, file: &'a str){
         let array_to_host_array = |array:&Array<f32>| {
             let dtemp = array.dims();
             let dims = dtemp.get();
@@ -194,7 +194,7 @@ impl ANN{
     }
 
 
-    pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64) -> ANN{
+    pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64, generational_callback: Box<Fn(u64, ANN) -> ()>) -> ANN{
         let mut zoo = ANN::gen_offspring(self, population, mutation_speed);
 
         let fcomp = |f1, f2| {
@@ -221,6 +221,7 @@ impl ANN{
             println!("Best error rate of generation {}: {}", gen, test_result[0].0);
             //println!("Best network:");
             //test_result[0].1.print();
+            generational_callback(gen, test_result[0].1.clone());
             zoo = test_result.into_iter().take(population).map(|(score, spec)| spec).collect::<Vec<ANN>>();
         }
 
