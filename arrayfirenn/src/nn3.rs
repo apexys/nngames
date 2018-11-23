@@ -11,17 +11,24 @@ pub struct ANN{
 }
 
 #[derive(Serialize, Deserialize)]
-struct HostArray{
+pub struct HostArray{
     pub dims: [u64;4],
     pub data: Vec<f32>
 }
 
 #[derive(Serialize, Deserialize)]
-struct HostANN{
+pub struct HostANN{
     pub layers: Vec<HostArray>,
     pub num_inputs: usize,
     pub num_outputs: usize,
     pub num_layers: usize
+}
+
+impl HostANN{
+    pub fn save<'a>(&self, file: &'a str){
+        let f = std::fs::File::create(file).unwrap();
+        bincode::serialize_into(f, &self).unwrap();
+    }
 }
 
 impl ANN{
@@ -51,6 +58,30 @@ impl ANN{
         }
     }
 
+    pub fn to_host_ann(&self) -> HostANN{
+        let array_to_host_array = |array:&Array<f32>| {
+            let dtemp = array.dims();
+            let dims = dtemp.get();
+            println!("Allocating buffer of size {}", array.elements());
+            let mut buffer: Vec<f32> = Vec::new();
+            buffer.resize(array.elements(), 0f32);
+            println!("Copying to buffer");
+            array.host(&mut buffer);
+            HostArray{
+                dims: *dims,
+                data: buffer
+            }
+        };
+
+        let host_ann = HostANN{
+            layers: self.layers.iter().map(array_to_host_array).collect::<Vec<HostArray>>(),
+            num_inputs: self.num_inputs,
+            num_layers: self.num_layers,
+            num_outputs: self.num_outputs
+        };
+
+        return host_ann;
+    }
 
     pub fn save<'a>(&self, file: &'a str){
         let array_to_host_array = |array:&Array<f32>| {
@@ -194,7 +225,7 @@ impl ANN{
     }
 
 
-    pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64, generational_callback: Box<Fn(u64, ANN) -> ()>) -> ANN{
+    pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64, generational_callback: Box<Fn(u64, HostANN) -> ()>) -> ANN{
         let mut zoo = ANN::gen_offspring(self, population, mutation_speed);
 
         let fcomp = |f1, f2| {
@@ -221,7 +252,7 @@ impl ANN{
             println!("Best error rate of generation {}: {}", gen, test_result[0].0);
             //println!("Best network:");
             //test_result[0].1.print();
-            generational_callback(gen, test_result[0].1.clone());
+            generational_callback(gen, test_result[0].1.to_host_ann());
             zoo = test_result.into_iter().take(population).map(|(score, spec)| spec).collect::<Vec<ANN>>();
         }
 

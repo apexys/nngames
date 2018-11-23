@@ -11,7 +11,7 @@ use af::*;
 
 
 mod nn3;
-use self::nn3::ANN;
+use self::nn3::{ANN, HostANN};
 
 mod inputdata;
 mod demodata;
@@ -53,7 +53,7 @@ fn main() {
 
     println!("Training network");
 
-    let cb = |gen, net: ANN|{
+    let cb = |gen, net: HostANN|{
         if gen % 5 == 0{
             std::thread::spawn(move || {
                 net.save(&format!{"gen.{}.ann", gen});
