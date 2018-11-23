@@ -1,5 +1,5 @@
 #![feature(extern_crate_item_prelude)]
-
+#![feature(duration_as_u128)]
 #[macro_use]
 extern crate serde_derive;
 extern crate bincode;
@@ -28,17 +28,26 @@ fn main() {
     let (name, platform, toolkit, compute) = device_info();
     print!("Name: {}\nPlatform: {}\nToolkit: {}\nCompute: {}\n", name, platform, toolkit, compute);
     println!("Revision: {}", get_revision());
+ 
+    let mut ann: ANN =  match std::path::Path::new("testnn.ann").exists(){
+        false => {
+            println!("Creating test network");
+            ANN::new(vec![2,3, 3,1])
+        },
+        true => {
+            println!("Loading test network");
+            ANN::load("testnn.ann")
+        }
+    };
 
-    println!("Creating test network");
-    let mut ann = ANN::new(vec![2,3,1]);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
-    let test_input = ar(vec![0.0,1.0]);
+    //let test_input = ar(vec![0.0,1.0]);
 
-    println!("Prediction: ");
-    let pred = ann.predict(&test_input);
-    print(&pred);
+    //println!("Prediction: ");
+    //let pred = ann.predict(&test_input);
+    //print(&pred);
 
 
 
@@ -55,9 +64,11 @@ fn main() {
        
     println!("Training network");
 
-    ann.evo_train(&testdata_input, 10, 1000, 0.01, 10000);
+    ann.evo_train(&testdata_input, 10, 150, 0.1, 20);
 
     println!("Training done");
+
+    ann.save("testnn.ann");
     
 /*
     let input: Array<f32> = randu(Dim4::new(&[2,1,1,1]));
