@@ -63,7 +63,7 @@ fn main() {
         }
     };
 
-    ann.evo_train(&testdata_array, 2, 10, 0.1, 10000, Box::new(cb));
+    ann.evo_train_ai(&testdata_array, 4, 8, 0.1, 10000, Box::new(cb));
 
     println!("Training done");
 

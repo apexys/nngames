@@ -220,6 +220,58 @@ impl ANN{
         }).fold(0f32, |prev, next| prev + next)
     }
 
+    fn test_on_arrays(network: &ANN, inputs: &Array<f32>, outputs: &Array<f32>, num_tests: u64) -> f32{
+        (0 .. num_tests).into_iter().map(|rownum| {
+            let result = network.predict(&col(inputs, rownum));
+            sum_all(&abs(&(result - &col(outputs, rownum)))).0 as f32
+        }).fold(0f32, |prev, next| prev + next) / (num_tests as f32)
+    }
+
+
+
+    pub fn evo_train_ai(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64, generational_callback: Box<Fn(u64, HostANN) -> ()>) -> ANN{
+        let mut zoo = ANN::gen_offspring(self, population, mutation_speed);
+
+        let testdata_inputs = join_many(1, testdata.iter().map(|(inputs, _outputs)| inputs).collect::<Vec<&Array<f32>>>());
+        let testdata_outputs = join_many(1, testdata.iter().map(|(_inputs, outputs)| outputs).collect::<Vec<&Array<f32>>>());
+
+        println!("Input dimensions: {:?}, Output dimensions: {:?}", testdata_inputs.dims().get(), testdata_outputs.dims().get());
+        let tdo = col(&testdata_outputs, 0);
+        af_print!("First piece of output data: ", tdo);
+
+        let num_tests = testdata.len() as u64;
+
+        let fcomp = |f1, f2| {
+            if f1 < f2{
+                return Ordering::Less;
+            }else if f2 > f1{
+                return Ordering::Greater;
+            }else{
+                return Ordering::Equal;
+            }
+        };
+
+        for gen in 0 .. generations{
+            println!("Starting test on generation {}", gen);
+            let mut now = Instant::now();
+            let offspring = zoo.iter().map(|specimen| ANN::gen_offspring(specimen, offspring / population, mutation_speed)).flatten().collect::<Vec<ANN>>();
+            println!("Generation took {}", now.elapsed().as_millis());
+            now = Instant::now();
+            let mut test_result = zoo.into_iter().chain(offspring).map(|spec| (ANN::test_on_arrays(&spec, &testdata_inputs, &testdata_outputs, num_tests), spec)).collect::<Vec<(f32, ANN)>>();
+            println!("Test took {}", now.elapsed().as_millis());
+            now = Instant::now();
+            test_result.sort_unstable_by(|sp1, sp2| fcomp(sp1.0, sp2.0));
+            println!("Sort took {}", now.elapsed().as_millis());
+            println!("Best error rate of generation {}: {}", gen, test_result[0].0);
+            //println!("Best network:");
+            //test_result[0].1.print();
+            generational_callback(gen, test_result[0].1.to_host_ann());
+            zoo = test_result.into_iter().take(population).map(|(score, spec)| spec).collect::<Vec<ANN>>();
+        }
+
+        return zoo[0].clone();
+    }
+
 
     pub fn evo_train(&self, testdata: &Vec<(Array<f32>, Array<f32>)>, population: usize, offspring: usize, mutation_speed: f32, generations: u64, generational_callback: Box<Fn(u64, HostANN) -> ()>) -> ANN{
         let mut zoo = ANN::gen_offspring(self, population, mutation_speed);
