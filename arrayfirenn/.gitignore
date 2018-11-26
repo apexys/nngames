@@ -1,1 +1,3 @@
 target
+glyphgen/node_modules
+glyphgen/package-lock.json
