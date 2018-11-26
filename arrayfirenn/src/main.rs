@@ -33,11 +33,11 @@ fn main() {
     let mut ann: ANN =  match std::path::Path::new("testnn.ann").exists(){
         false => {
             println!("Creating test network");
-            ANN::new(vec![128*128,32*32, 16*16, 8*8,5])
+            ANN::new(vec![64*64,32*32, 16*16, 8*8,1])
         },
         true => {
             println!("Loading test network");
-            ANN::load("testnn.ann")
+            ANN::load("da.ann")
         }
     };
 
@@ -45,18 +45,18 @@ fn main() {
     let glyphlib = load_glyphlib();
 
     println!("Generating testdata");
-    let testdata = create_testdata_multiple(&glyphlib, 100);
+    let testdata = create_testdata_multiple(&glyphlib, 10000);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
-    let testdata_array = testdata.into_iter().map(|td| (ar(td.unpacked_pixels), ar(vec![td.glyph_id, td.gx, td.gy, td.rotation, td.glyph_present]))).collect::<Vec<(Array<f32>, Array<f32>)>>();
+    let testdata_array = testdata.into_iter().map(|td| (ar(td.unpacked_pixels), ar(vec![td.glyph_present]))).collect::<Vec<(Array<f32>, Array<f32>)>>();
 
     println!("Training network");
 
     let cb = |gen, net: HostANN|{
         if gen % 5 == 0{
             std::thread::spawn(move || {
-                net.save(&format!{"gen.{}.ann", gen});
+                net.save(&format!{"da.gen.{}.ann", gen});
             });
         }
     };
@@ -65,7 +65,7 @@ fn main() {
 
     println!("Training done");
 
-    ann.save("testnn.ann");
+    ann.save("da.ann");
     
 /*
     let input: Array<f32> = randu(Dim4::new(&[2,1,1,1]));
