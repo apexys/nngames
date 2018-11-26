@@ -1,6 +1,6 @@
-const glyphpath: &'static str = "glyphgen/glyphs/";
+const glyphpath: &'static str = "./glyphgen/glyphs/";
 const glyphext: &'static str = ".png";
-const imgsize: u32 = 128u32;
+const imgsize: u32 = 64u32;
 
 
 use image::imageops;
@@ -15,6 +15,7 @@ use super::inputdata::Inputdata;
 type Imgtype = ImageBuffer<image::Luma<u8>, std::vec::Vec<u8>>;
 
 fn load_glyph(id: u8) -> Imgtype{
+	println!("{}{}{}", glyphpath, id, glyphext);
     image::open(format!("{}{}{}", glyphpath, id, glyphext)).unwrap().to_luma()
 }
 
@@ -32,8 +33,8 @@ pub fn create_testdata(glyphlib: &Vec<Imgtype>)-> Inputdata{
     let brighten_max = -0.8f32;
     let contrast_min = -0.5;
     let contrast_max = 0.5;
-    let glyphsize_min = 30;
-    let glyphsize_max = 60;
+    let glyphsize_min = 17;
+    let glyphsize_max = 23;
     let glyphintensity_min = 0.3;
     let glyphintensity_max = 1f32;
 
