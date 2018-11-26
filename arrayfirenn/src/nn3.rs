@@ -62,10 +62,8 @@ impl ANN{
         let array_to_host_array = |array:&Array<f32>| {
             let dtemp = array.dims();
             let dims = dtemp.get();
-            println!("Allocating buffer of size {}", array.elements());
             let mut buffer: Vec<f32> = Vec::new();
             buffer.resize(array.elements(), 0f32);
-            println!("Copying to buffer");
             array.host(&mut buffer);
             HostArray{
                 dims: *dims,
@@ -87,10 +85,8 @@ impl ANN{
         let array_to_host_array = |array:&Array<f32>| {
             let dtemp = array.dims();
             let dims = dtemp.get();
-            println!("Allocating buffer of size {}", array.elements());
             let mut buffer: Vec<f32> = Vec::new();
             buffer.resize(array.elements(), 0f32);
-            println!("Copying to buffer");
             array.host(&mut buffer);
             HostArray{
                 dims: *dims,

@@ -30,10 +30,10 @@ fn main() {
     print!("Name: {}\nPlatform: {}\nToolkit: {}\nCompute: {}\n", name, platform, toolkit, compute);
     println!("Revision: {}", get_revision());
  
-    let mut ann: ANN =  match std::path::Path::new("testnn.ann").exists(){
+    let mut ann: ANN =  match std::path::Path::new("da.ann").exists(){
         false => {
             println!("Creating test network");
-            ANN::new(vec![64*64,32*32, 16*16, 8*8,1])
+            ANN::new(vec![64*64,22*22, 10*10,10,1])
         },
         true => {
             println!("Loading test network");
@@ -45,23 +45,25 @@ fn main() {
     let glyphlib = load_glyphlib();
 
     println!("Generating testdata");
-    let testdata = create_testdata_multiple(&glyphlib, 10000);
+    let testdata = create_testdata_multiple(&glyphlib, 10);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
+
+    println!("Converting testdata");
 
     let testdata_array = testdata.into_iter().map(|td| (ar(td.unpacked_pixels), ar(vec![td.glyph_present]))).collect::<Vec<(Array<f32>, Array<f32>)>>();
 
     println!("Training network");
 
     let cb = |gen, net: HostANN|{
-        if gen % 5 == 0{
+        if gen % 10 == 0{
             std::thread::spawn(move || {
                 net.save(&format!{"da.gen.{}.ann", gen});
             });
         }
     };
 
-    ann.evo_train(&testdata_array, 2, 10, 0.01, 10000, Box::new(cb));
+    ann.evo_train(&testdata_array, 2, 10, 0.1, 10000, Box::new(cb));
 
     println!("Training done");
 
