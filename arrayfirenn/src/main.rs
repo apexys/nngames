@@ -20,7 +20,7 @@ use self::demodata::{create_testdata_multiple, load_glyphlib};
 
 #[allow(unused_must_use)]
 fn main() {
-    set_backend(Backend::CPU);
+    set_backend(Backend::CUDA);
     println!("{} compute devices found", device_count());
     set_device(0);
     info();
@@ -45,7 +45,7 @@ fn main() {
     let glyphlib = load_glyphlib();
 
     println!("Generating testdata");
-    let testdata = create_testdata_multiple(&glyphlib, 40);
+    let testdata = create_testdata_multiple(&glyphlib, 1000);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
@@ -63,7 +63,7 @@ fn main() {
         }
     };
 
-    ann.evo_train_ai_chunked(&testdata_array, 4, 16, 0.1, 10000, Box::new(cb));
+    ann.evo_train_ai_chunked(&testdata_array, 10, 100, 0.1, 10000, Box::new(cb));
 
     println!("Training done");
 
