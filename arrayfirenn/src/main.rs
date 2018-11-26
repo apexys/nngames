@@ -20,7 +20,7 @@ use self::demodata::{create_testdata_multiple, load_glyphlib};
 
 #[allow(unused_must_use)]
 fn main() {
-    set_backend(Backend::OPENCL);
+    set_backend(Backend::CPU);
     println!("{} compute devices found", device_count());
     set_device(0);
     info();
@@ -33,7 +33,7 @@ fn main() {
     let mut ann: ANN =  match std::path::Path::new("da.ann").exists(){
         false => {
             println!("Creating test network");
-            ANN::new(vec![64*64,22*22, 10*10,10,1])
+            ANN::new(vec![64*64,22*22, 16*16,32, 10,1])
         },
         true => {
             println!("Loading test network");
@@ -45,7 +45,7 @@ fn main() {
     let glyphlib = load_glyphlib();
 
     println!("Generating testdata");
-    let testdata = create_testdata_multiple(&glyphlib, 10);
+    let testdata = create_testdata_multiple(&glyphlib, 40);
 
     let ar = |v: Vec<f32>| Array::new(&v, Dim4::new(&[v.len() as u64, 1,1,1]));
 
@@ -63,7 +63,7 @@ fn main() {
         }
     };
 
-    ann.evo_train_ai(&testdata_array, 4, 8, 0.1, 10000, Box::new(cb));
+    ann.evo_train_ai_chunked(&testdata_array, 4, 16, 0.1, 10000, Box::new(cb));
 
     println!("Training done");
 
