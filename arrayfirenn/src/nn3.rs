@@ -217,7 +217,7 @@ impl ANN{
             let result = network.predict(test);
             let error = sum_all(&abs(&(result - expected))).0 as f32;
             return error;
-        }).fold(0f32, |prev, next| prev + next)
+        }).fold(0f32, |prev, next| prev + next) / (testdata.len() as f32)
     }
 
     fn test_on_arrays(network: &ANN, inputs: &Array<f32>, outputs: &Array<f32>, num_tests: u64) -> f32{
